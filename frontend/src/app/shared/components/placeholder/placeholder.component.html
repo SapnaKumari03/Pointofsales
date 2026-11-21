@@ -1,0 +1,35 @@
+<div class="placeholder-container">
+  <div class="breadcrumb">
+    <a routerLink="/dashboard" class="bc-link">Dashboard</a>
+    <span class="bc-sep">/</span>
+    <span class="bc-current">{{ moduleTitle }}</span>
+  </div>
+
+  <div class="pos-card placeholder-card">
+    <div class="placeholder-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="placeholder-svg">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+
+    <h2 class="placeholder-title">{{ moduleTitle }}</h2>
+    <p class="placeholder-desc">{{ moduleDescription }}</p>
+
+    <div class="placeholder-meta">
+      <span class="badge badge-primary">Phase 1 Complete (POS Dashboard)</span>
+      <span class="badge badge-neutral">Scheduled for Next Phase</span>
+    </div>
+
+    <div class="placeholder-actions">
+      <a routerLink="/dashboard" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>Return to Dashboard</span>
+      </a>
+    </div>
+  </div>
+</div>

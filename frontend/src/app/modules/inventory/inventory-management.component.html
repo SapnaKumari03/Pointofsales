@@ -1,0 +1,665 @@
+<div class="inventory-container">
+  <!-- Top Page Header -->
+  <div class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Inventory &amp; Stock Management</h1>
+      <p class="page-subtitle">Real-time stock balance tracking, stock intakes, outbound adjustments, and audit trail</p>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="header-actions">
+      <div class="tab-pill-group">
+        <button 
+          class="tab-pill-btn" 
+          [class.active]="activeTab === 'inventory'"
+          (click)="activeTab = 'inventory'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          </svg>
+          <span>Stock Balances</span>
+        </button>
+        <button 
+          class="tab-pill-btn" 
+          [class.active]="activeTab === 'movements'"
+          (click)="activeTab = 'movements'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Movement Audit Log</span>
+          <span class="tab-badge">{{ movements.length }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 Required Overview Cards: Total Stock Items, Low Stock, Out of Stock, Stock Value -->
+  <div class="overview-grid">
+    <!-- Card 1: Total Stock Items -->
+    <div class="pos-card overview-card">
+      <div class="overview-icon bg-primary-subtle text-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+      </div>
+      <div class="overview-body">
+        <span class="overview-label">Total Stock Items</span>
+        <div class="overview-val">{{ metrics.totalItems }} Products</div>
+        <div class="overview-sub">Physical Balance: <strong>{{ metrics.totalUnits }} Units</strong></div>
+      </div>
+    </div>
+
+    <!-- Card 2: Low Stock Alerts -->
+    <div 
+      class="pos-card overview-card cursor-pointer" 
+      [class.card-active-filter]="selectedStockFilter === 'LOW_STOCK'"
+      (click)="selectedStockFilter = selectedStockFilter === 'LOW_STOCK' ? 'ALL' : 'LOW_STOCK'">
+      <div class="overview-icon bg-warning-subtle text-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+      <div class="overview-body">
+        <span class="overview-label">Low Stock</span>
+        <div class="overview-val text-warning">{{ metrics.lowStockCount }} Items</div>
+        <div class="overview-sub">Below Reorder Level &bull; Click to filter</div>
+      </div>
+    </div>
+
+    <!-- Card 3: Out of Stock -->
+    <div 
+      class="pos-card overview-card cursor-pointer" 
+      [class.card-active-filter]="selectedStockFilter === 'OUT_OF_STOCK'"
+      (click)="selectedStockFilter = selectedStockFilter === 'OUT_OF_STOCK' ? 'ALL' : 'OUT_OF_STOCK'">
+      <div class="overview-icon bg-danger-subtle text-danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+      </div>
+      <div class="overview-body">
+        <span class="overview-label">Out of Stock</span>
+        <div class="overview-val text-danger">{{ metrics.outOfStockCount }} Items</div>
+        <div class="overview-sub">Zero Available Balance &bull; Click to filter</div>
+      </div>
+    </div>
+
+    <!-- Card 4: Total Stock Value -->
+    <div class="pos-card overview-card">
+      <div class="overview-icon bg-success-subtle text-success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      </div>
+      <div class="overview-body">
+        <span class="overview-label">Total Stock Value</span>
+        <div class="overview-val">₹{{ metrics.totalStockValue | number:'1.2-2' }}</div>
+        <div class="overview-sub">Retail Valuation: <strong>₹{{ metrics.potentialRetailValue | number:'1.0-0' }}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low Stock Alert Warning Banner (If any item is low on stock) -->
+  <div class="alert-banner" *ngIf="metrics.lowStockCount > 0 || metrics.outOfStockCount > 0">
+    <div class="alert-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </div>
+    <div class="alert-text">
+      <strong>Attention Required:</strong> {{ metrics.lowStockCount }} items have fallen below their safety reorder levels, and {{ metrics.outOfStockCount }} product is completely out of stock.
+    </div>
+    <button 
+      class="btn btn-sm btn-outline alert-btn"
+      (click)="selectedStockFilter = 'LOW_STOCK'; activeTab = 'inventory'">
+      Review Reorder Items
+    </button>
+  </div>
+
+  <!-- Filters Toolbar -->
+  <div class="pos-card filter-toolbar">
+    <!-- Search Bar -->
+    <div class="search-input-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        placeholder="Filter by product name, SKU, barcode, or reference number..." 
+        class="filter-search-input"
+      />
+      <button *ngIf="searchTerm" class="clear-search-btn" (click)="searchTerm = ''" title="Clear search">
+        &times;
+      </button>
+    </div>
+
+    <!-- Category Filter (For Inventory Tab) -->
+    <div class="select-wrapper" *ngIf="activeTab === 'inventory'">
+      <label class="filter-label">Category:</label>
+      <select [(ngModel)]="selectedCategory" class="filter-select">
+        <option value="ALL">All Categories</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <!-- Stock Status Filter (For Inventory Tab) -->
+    <div class="select-wrapper" *ngIf="activeTab === 'inventory'">
+      <label class="filter-label">Stock Status:</label>
+      <select [(ngModel)]="selectedStockFilter" class="filter-select">
+        <option value="ALL">All Levels</option>
+        <option value="IN_STOCK">Adequate Stock</option>
+        <option value="LOW_STOCK">Low Stock (≤ Reorder Level)</option>
+        <option value="OUT_OF_STOCK">Out of Stock (Zero Units)</option>
+      </select>
+    </div>
+
+    <!-- Movement Type Filter (For Movements Tab) -->
+    <div class="select-wrapper" *ngIf="activeTab === 'movements'">
+      <label class="filter-label">Operation Type:</label>
+      <select [(ngModel)]="movementFilterType" class="filter-select">
+        <option value="ALL">All Operations</option>
+        <option value="STOCK_IN">Stock In (Inflow)</option>
+        <option value="STOCK_OUT">Stock Out (Outflow)</option>
+        <option value="ADJUSTMENT">Stock Adjustment</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- TAB 1: INVENTORY TABLE -->
+  <div class="pos-card table-wrapper" *ngIf="activeTab === 'inventory'">
+    <div class="table-meta-bar">
+      <span>Showing <strong>{{ filteredProducts.length }}</strong> inventory records</span>
+      <span *ngIf="selectedStockFilter !== 'ALL' || selectedCategory !== 'ALL' || searchTerm" class="active-filter-hint">
+        (Filters active)
+      </span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Product &amp; Barcode</th>
+            <th>SKU</th>
+            <th>Category</th>
+            <th class="text-center">Available Stock</th>
+            <th class="text-center">Reorder Point</th>
+            <th class="text-right">Stock Valuation</th>
+            <th class="text-center">Stock Status</th>
+            <th class="text-center">Operations</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filteredProducts">
+            <!-- Product & Barcode -->
+            <td>
+              <div class="product-name" (click)="openItemHistory(p)">{{ p.name }}</div>
+              <div class="barcode-subtext">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                  <path d="M3 5v14M7 5v14M11 5v14M15 5v14M19 5v14M21 5v14"></path>
+                </svg>
+                <span>{{ p.barcode }}</span>
+              </div>
+            </td>
+
+            <!-- SKU -->
+            <td>
+              <span class="sku-badge">{{ p.sku }}</span>
+            </td>
+
+            <!-- Category -->
+            <td>
+              <span class="category-pill">{{ p.category }}</span>
+            </td>
+
+            <!-- Available Stock Quantity & Meter -->
+            <td class="text-center">
+              <div class="stock-qty-val fw-700" [ngClass]="{
+                'text-success': getStockStatus(p) === 'IN_STOCK',
+                'text-warning': getStockStatus(p) === 'LOW_STOCK',
+                'text-danger': getStockStatus(p) === 'OUT_OF_STOCK'
+              }">
+                {{ p.stockQuantity }} {{ p.unit }}
+              </div>
+              <div class="mini-progress-track">
+                <div 
+                  class="mini-progress-fill" 
+                  [ngClass]="{
+                    'bg-success': getStockStatus(p) === 'IN_STOCK',
+                    'bg-warning': getStockStatus(p) === 'LOW_STOCK',
+                    'bg-danger': getStockStatus(p) === 'OUT_OF_STOCK'
+                  }"
+                  [style.width.%]="getStockPercentage(p)">
+                </div>
+              </div>
+            </td>
+
+            <!-- Reorder Point -->
+            <td class="text-center text-muted">
+              <span>{{ p.minStockLevel }} {{ p.unit }}</span>
+            </td>
+
+            <!-- Stock Valuation -->
+            <td class="text-right">
+              <div class="fw-700 text-dark">₹{{ (p.stockQuantity * p.costPrice) | number:'1.2-2' }}</div>
+              <div class="valuation-subtext">@ ₹{{ p.costPrice }}/{{ p.unit }}</div>
+            </td>
+
+            <!-- Stock Status Badge -->
+            <td class="text-center">
+              <span class="badge" [ngClass]="{
+                'badge-success': getStockStatus(p) === 'IN_STOCK',
+                'badge-warning': getStockStatus(p) === 'LOW_STOCK',
+                'badge-danger': getStockStatus(p) === 'OUT_OF_STOCK'
+              }">
+                <span *ngIf="getStockStatus(p) === 'IN_STOCK'">● In Stock</span>
+                <span *ngIf="getStockStatus(p) === 'LOW_STOCK'">⚠ Low Stock</span>
+                <span *ngIf="getStockStatus(p) === 'OUT_OF_STOCK'">✕ Out of Stock</span>
+              </span>
+            </td>
+
+            <!-- Operations: Stock In, Stock Out, Adjust, History -->
+            <td class="text-center">
+              <div class="ops-button-group">
+                <button class="btn btn-op btn-op-in" (click)="openStockIn(p)" title="Stock In (Add Inventory)">
+                  + Stock In
+                </button>
+                <button class="btn btn-op btn-op-out" (click)="openStockOut(p)" title="Stock Out (Remove Defective / Consumed)">
+                  - Stock Out
+                </button>
+                <button class="btn btn-op btn-op-adj" (click)="openAdjust(p)" title="Stock Adjustment (Audit Count)">
+                  Adjust
+                </button>
+                <button class="btn btn-op-icon" (click)="openItemHistory(p)" title="View Movement Audit Log">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="filteredProducts.length === 0">
+            <td colspan="8" class="empty-state-cell">
+              <div class="empty-state-wrap">
+                <div class="empty-title">No matching inventory records found</div>
+                <button class="btn btn-outline" (click)="searchTerm = ''; selectedCategory = 'ALL'; selectedStockFilter = 'ALL'">
+                  Reset Filters
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 2: STOCK MOVEMENT AUDIT LOG -->
+  <div class="pos-card table-wrapper" *ngIf="activeTab === 'movements'">
+    <div class="table-meta-bar">
+      <span>Showing <strong>{{ filteredMovements.length }}</strong> stock transaction logs</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date &amp; Time</th>
+            <th>Product &amp; SKU</th>
+            <th class="text-center">Operation Type</th>
+            <th class="text-center">Quantity Delta</th>
+            <th class="text-center">Balance After</th>
+            <th>Reference No</th>
+            <th>Reason / Audit Notes</th>
+            <th>Performed By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of filteredMovements">
+            <!-- Timestamp -->
+            <td class="text-muted font-mono">{{ m.timestamp }}</td>
+
+            <!-- Product & SKU -->
+            <td>
+              <div class="product-name">{{ m.productName }}</div>
+              <div class="sku-badge">{{ m.sku }}</div>
+            </td>
+
+            <!-- Operation Type Badge -->
+            <td class="text-center">
+              <span class="badge" [ngClass]="{
+                'badge-success': m.type === 'STOCK_IN',
+                'badge-danger': m.type === 'STOCK_OUT',
+                'badge-primary': m.type === 'ADJUSTMENT'
+              }">
+                {{ m.type }}
+              </span>
+            </td>
+
+            <!-- Quantity Delta -->
+            <td class="text-center">
+              <span class="delta-badge" [ngClass]="{
+                'delta-positive': m.quantity > 0,
+                'delta-negative': m.quantity < 0,
+                'delta-neutral': m.quantity === 0
+              }">
+                {{ m.quantity > 0 ? '+' : '' }}{{ m.quantity }}
+              </span>
+            </td>
+
+            <!-- Balance After -->
+            <td class="text-center fw-700 text-dark">
+              {{ m.balanceAfter }}
+            </td>
+
+            <!-- Reference No -->
+            <td>
+              <span class="reference-code">{{ m.referenceNo || 'N/A' }}</span>
+            </td>
+
+            <!-- Reason / Notes -->
+            <td>
+              <span class="reason-text">{{ m.reason }}</span>
+            </td>
+
+            <!-- Performed By -->
+            <td class="text-muted text-sm">
+              {{ m.performedBy }}
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="filteredMovements.length === 0">
+            <td colspan="8" class="empty-state-cell">
+              <div class="empty-state-wrap">
+                <div class="empty-title">No stock movements found</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL 1: STOCK IN OPERATION -->
+  <div class="modal-backdrop" *ngIf="showStockInModal && selectedProduct" (click)="closeModals()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title text-success">
+          Stock In: Add Inventory
+        </h2>
+        <button class="modal-close-btn" (click)="closeModals()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="target-item-card">
+          <div class="target-item-title">{{ selectedProduct.name }}</div>
+          <div class="target-item-sub">
+            SKU: <strong>{{ selectedProduct.sku }}</strong> &bull; Current Available: 
+            <strong class="text-primary">{{ selectedProduct.stockQuantity }} {{ selectedProduct.unit }}</strong>
+          </div>
+        </div>
+
+        <form class="form-grid" (submit)="submitStockIn(); $event.preventDefault()">
+          <div class="form-group full-width">
+            <label class="form-label">Units to Add <span class="req">*</span></label>
+            <input 
+              type="number" 
+              [(ngModel)]="stockInQty" 
+              name="stockInQty" 
+              min="1" 
+              required 
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">PO / Delivery Reference</label>
+            <input 
+              type="text" 
+              [(ngModel)]="stockInRef" 
+              name="stockInRef" 
+              placeholder="e.g. PO-2026-092" 
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Inflow Reason</label>
+            <input 
+              type="text" 
+              [(ngModel)]="stockInNotes" 
+              name="stockInNotes" 
+              placeholder="e.g. Vendor Delivery Intake" 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Preview Stock Calculation -->
+          <div class="form-group full-width calculation-preview-box">
+            <span>Resulting Stock Balance:</span>
+            <strong>{{ selectedProduct.stockQuantity }} + {{ stockInQty }} = {{ selectedProduct.stockQuantity + stockInQty }} {{ selectedProduct.unit }}</strong>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModals()">Cancel</button>
+        <button class="btn btn-success" (click)="submitStockIn()">
+          Confirm Stock In
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: STOCK OUT OPERATION -->
+  <div class="modal-backdrop" *ngIf="showStockOutModal && selectedProduct" (click)="closeModals()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title text-danger">
+          Stock Out: Deduct Inventory
+        </h2>
+        <button class="modal-close-btn" (click)="closeModals()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="target-item-card">
+          <div class="target-item-title">{{ selectedProduct.name }}</div>
+          <div class="target-item-sub">
+            SKU: <strong>{{ selectedProduct.sku }}</strong> &bull; Current Available: 
+            <strong class="text-primary">{{ selectedProduct.stockQuantity }} {{ selectedProduct.unit }}</strong>
+          </div>
+        </div>
+
+        <form class="form-grid" (submit)="submitStockOut(); $event.preventDefault()">
+          <div class="form-group full-width">
+            <label class="form-label">Units to Remove <span class="req">*</span></label>
+            <input 
+              type="number" 
+              [(ngModel)]="stockOutQty" 
+              name="stockOutQty" 
+              min="1" 
+              [max]="selectedProduct.stockQuantity"
+              required 
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Deduction Reason <span class="req">*</span></label>
+            <select [(ngModel)]="stockOutReason" name="stockOutReason" class="form-select">
+              <option *ngFor="let r of stockOutReasons" [value]="r">{{ r }}</option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Reference / Incident Ticket</label>
+            <input 
+              type="text" 
+              [(ngModel)]="stockOutRef" 
+              name="stockOutRef" 
+              placeholder="e.g. DMG-2026-08" 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Preview Stock Calculation -->
+          <div class="form-group full-width calculation-preview-box text-danger-box">
+            <span>Resulting Stock Balance:</span>
+            <strong>{{ selectedProduct.stockQuantity }} - {{ stockOutQty }} = {{ selectedProduct.stockQuantity - stockOutQty }} {{ selectedProduct.unit }}</strong>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModals()">Cancel</button>
+        <button class="btn btn-danger" (click)="submitStockOut()">
+          Confirm Stock Out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: STOCK ADJUSTMENT -->
+  <div class="modal-backdrop" *ngIf="showAdjustModal && selectedProduct" (click)="closeModals()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          Physical Stock Count Adjustment
+        </h2>
+        <button class="modal-close-btn" (click)="closeModals()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="target-item-card">
+          <div class="target-item-title">{{ selectedProduct.name }}</div>
+          <div class="target-item-sub">
+            System Recorded Stock: <strong class="text-primary">{{ selectedProduct.stockQuantity }} {{ selectedProduct.unit }}</strong>
+          </div>
+        </div>
+
+        <form class="form-grid" (submit)="submitAdjust(); $event.preventDefault()">
+          <div class="form-group full-width">
+            <label class="form-label">Actual Counted Physical Stock <span class="req">*</span></label>
+            <input 
+              type="number" 
+              [(ngModel)]="adjustActualQty" 
+              name="adjustActualQty" 
+              min="0" 
+              required 
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Adjustment Reason <span class="req">*</span></label>
+            <select [(ngModel)]="adjustReason" name="adjustReason" class="form-select">
+              <option *ngFor="let ar of adjustmentReasons" [value]="ar">{{ ar }}</option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Audit Batch Reference</label>
+            <input 
+              type="text" 
+              [(ngModel)]="adjustRef" 
+              name="adjustRef" 
+              placeholder="e.g. AUDIT-NOV-2026" 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Calculated Discrepancy Delta -->
+          <div class="form-group full-width calculation-preview-box">
+            <span>Discrepancy Delta:</span>
+            <strong>
+              {{ (adjustActualQty - selectedProduct.stockQuantity) >= 0 ? '+' : '' }}{{ adjustActualQty - selectedProduct.stockQuantity }} {{ selectedProduct.unit }}
+            </strong>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModals()">Cancel</button>
+        <button class="btn btn-primary" (click)="submitAdjust()">
+          Apply Stock Adjustment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: ITEM-SPECIFIC MOVEMENT HISTORY DRAWER -->
+  <div class="modal-backdrop" *ngIf="showHistoryDrawer && selectedProduct" (click)="closeModals()">
+    <div class="modal-card history-drawer-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Stock Movement History</h2>
+          <span class="modal-sub">{{ selectedProduct.name }} (SKU: {{ selectedProduct.sku }})</span>
+        </div>
+        <button class="modal-close-btn" (click)="closeModals()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="drawer-stats-row">
+          <div>Current Balance: <strong>{{ selectedProduct.stockQuantity }} {{ selectedProduct.unit }}</strong></div>
+          <div>Safety Reorder Level: <strong>{{ selectedProduct.minStockLevel }} {{ selectedProduct.unit }}</strong></div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Operation</th>
+                <th class="text-center">Delta</th>
+                <th class="text-center">Balance After</th>
+                <th>Reference</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let pm of productMovements">
+                <td class="text-muted font-mono text-xs">{{ pm.timestamp }}</td>
+                <td>
+                  <span class="badge" [ngClass]="{
+                    'badge-success': pm.type === 'STOCK_IN',
+                    'badge-danger': pm.type === 'STOCK_OUT',
+                    'badge-primary': pm.type === 'ADJUSTMENT'
+                  }">{{ pm.type }}</span>
+                </td>
+                <td class="text-center fw-700" [ngClass]="{
+                  'text-success': pm.quantity > 0,
+                  'text-danger': pm.quantity < 0
+                }">
+                  {{ pm.quantity > 0 ? '+' : '' }}{{ pm.quantity }}
+                </td>
+                <td class="text-center fw-600">{{ pm.balanceAfter }}</td>
+                <td><span class="reference-code">{{ pm.referenceNo || 'N/A' }}</span></td>
+                <td class="reason-text">{{ pm.reason }}</td>
+              </tr>
+              <tr *ngIf="productMovements.length === 0">
+                <td colspan="6" class="text-center text-muted" style="padding: 24px;">
+                  No historical movements logged for this product yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModals()">Close History</button>
+      </div>
+    </div>
+  </div>
+</div>

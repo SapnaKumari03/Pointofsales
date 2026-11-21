@@ -1,0 +1,444 @@
+<div class="cash-container">
+  <!-- Top Header Banner -->
+  <div class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Payments &amp; Cash Drawer Management</h1>
+      <p class="page-subtitle">Track register shifts, cash float opening/closing, petty cash payouts, and reconciliation</p>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="header-actions">
+      <div class="tab-pill-group">
+        <button 
+          class="tab-pill-btn" 
+          [class.active]="activeTab === 'shift'"
+          (click)="activeTab = 'shift'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+            <circle cx="12" cy="12" r="2"></circle>
+          </svg>
+          <span>Active Drawer</span>
+        </button>
+
+        <button 
+          class="tab-pill-btn" 
+          [class.active]="activeTab === 'history'"
+          (click)="activeTab = 'history'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <polyline points="12 8 12 12 14 14"></polyline>
+            <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"></path>
+          </svg>
+          <span>Shift History ({{ shiftHistory.length }})</span>
+        </button>
+
+        <button 
+          class="tab-pill-btn" 
+          [class.active]="activeTab === 'payouts'"
+          (click)="activeTab = 'payouts'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+          <span>Cash Payouts ({{ paidOutLogs.length }})</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1: ACTIVE SHIFT & CASH DRAWER -->
+  <div *ngIf="activeTab === 'shift'">
+    <!-- If Shift is Active -->
+    <div *ngIf="activeShift" class="active-shift-card pos-card">
+      <div class="shift-card-header">
+        <div class="shift-header-left">
+          <div class="shift-badge-active">
+            <span class="pulse-dot"></span>
+            <span>ACTIVE REGISTER SHIFT</span>
+          </div>
+          <h2 class="shift-code-title">{{ activeShift.shiftCode }}</h2>
+          <div class="shift-meta-line">
+            <span>Cashier: <strong>{{ activeShift.cashierName }}</strong></span>
+            <span>&bull;</span>
+            <span>Opened: <strong>{{ activeShift.openedAt }}</strong></span>
+            <span>&bull;</span>
+            <span>Terminal: <strong>POS-01</strong></span>
+          </div>
+        </div>
+
+        <div class="shift-header-actions">
+          <button class="btn btn-outline" (click)="openPayoutDialog()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Record Cash Payout</span>
+          </button>
+
+          <button class="btn btn-danger" (click)="openCloseShiftDialog()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            <span>Close &amp; Reconcile Shift</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Cash Shift Key Metric Boxes (Requirements 6 & 7) -->
+      <div class="shift-metrics-grid">
+        <!-- 1. Opening Cash Float -->
+        <div class="shift-metric-box">
+          <span class="sm-label">Opening Cash Float</span>
+          <div class="sm-value text-dark">₹{{ activeShift.openingFloat | number:'1.2-2' }}</div>
+          <span class="sm-sub">Base register starting balance</span>
+        </div>
+
+        <!-- 2. Cash Received from Sales -->
+        <div class="shift-metric-box">
+          <span class="sm-label">Cash Received (Sales)</span>
+          <div class="sm-value text-success">+₹{{ activeShift.cashSales | number:'1.2-2' }}</div>
+          <span class="sm-sub">From completed cash checkouts</span>
+        </div>
+
+        <!-- 3. Cash Paid Out -->
+        <div class="shift-metric-box">
+          <span class="sm-label">Cash Paid Out (Expenses)</span>
+          <div class="sm-value text-danger">-₹{{ activeShift.cashPaidOut | number:'1.2-2' }}</div>
+          <span class="sm-sub">Petty cash &amp; vendor payouts</span>
+        </div>
+
+        <!-- 4. Expected Closing Cash -->
+        <div class="shift-metric-box expected-box">
+          <span class="sm-label">Expected Closing Balance</span>
+          <div class="sm-value text-primary">₹{{ activeShift.expectedCash | number:'1.2-2' }}</div>
+          <span class="sm-sub">Float + Cash Sales - Paid Out</span>
+        </div>
+      </div>
+
+      <!-- Formula Visualizer -->
+      <div class="formula-banner">
+        <span>Drawer Equation:</span>
+        <code>₹{{ activeShift.openingFloat }} (Float) + ₹{{ activeShift.cashSales }} (Cash In) - ₹{{ activeShift.cashPaidOut }} (Cash Out) = <strong>₹{{ activeShift.expectedCash | number:'1.2-2' }} Expected</strong></code>
+      </div>
+    </div>
+
+    <!-- If No Active Shift -->
+    <div *ngIf="!activeShift" class="pos-card no-shift-card">
+      <div class="no-shift-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="48" height="48" class="text-muted">
+          <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+          <circle cx="12" cy="12" r="2"></circle>
+        </svg>
+      </div>
+      <h2 class="no-shift-title">No Active Register Shift</h2>
+      <p class="no-shift-desc">The cash drawer is currently closed. Open a new register shift with starting cash float to begin billing.</p>
+      <button class="btn btn-primary" (click)="openNewShiftDialog()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Open New Shift (Start Float)</span>
+      </button>
+    </div>
+
+    <!-- Quick Settlement Mode Cards -->
+    <div class="multi-channel-grid" style="margin-top: 20px;">
+      <div class="pos-card channel-card">
+        <div class="channel-top">
+          <span class="badge badge-success">CASH SETTLEMENTS</span>
+          <span class="channel-count">{{ paymentSummary.cashTxCount }} bills</span>
+        </div>
+        <div class="channel-val">₹{{ paymentSummary.cashTotal | number:'1.2-2' }}</div>
+        <div class="channel-sub">In register drawer</div>
+      </div>
+
+      <div class="pos-card channel-card">
+        <div class="channel-top">
+          <span class="badge badge-primary">UPI QR SETTLEMENTS</span>
+          <span class="channel-count">{{ paymentSummary.upiTxCount }} bills</span>
+        </div>
+        <div class="channel-val">₹{{ paymentSummary.upiTotal | number:'1.2-2' }}</div>
+        <div class="channel-sub">Bank account settlement</div>
+      </div>
+
+      <div class="pos-card channel-card">
+        <div class="channel-top">
+          <span class="badge badge-warning">CARD SETTLEMENTS</span>
+          <span class="channel-count">{{ paymentSummary.cardTxCount }} bills</span>
+        </div>
+        <div class="channel-val">₹{{ paymentSummary.cardTotal | number:'1.2-2' }}</div>
+        <div class="channel-sub">EDC batch settlement</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: SHIFT HISTORY & RECONCILIATION LOG -->
+  <div class="pos-card table-wrapper" *ngIf="activeTab === 'history'">
+    <div class="table-meta-bar">
+      <span>Showing <strong>{{ shiftHistory.length }}</strong> closed shift reconciliation records</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Shift Code</th>
+            <th>Cashier</th>
+            <th>Opened</th>
+            <th>Closed</th>
+            <th class="text-right">Float (₹)</th>
+            <th class="text-right">Cash Sales (₹)</th>
+            <th class="text-right">Paid Out (₹)</th>
+            <th class="text-right">Expected (₹)</th>
+            <th class="text-right">Actual Count (₹)</th>
+            <th class="text-center">Variance (₹)</th>
+            <th class="text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of shiftHistory">
+            <td><span class="shift-code-badge">{{ s.shiftCode }}</span></td>
+            <td><span class="fw-600 text-dark">{{ s.cashierName }}</span></td>
+            <td class="text-muted font-mono text-xs">{{ s.openedAt }}</td>
+            <td class="text-muted font-mono text-xs">{{ s.closedAt || 'Active' }}</td>
+            <td class="text-right">₹{{ s.openingFloat | number:'1.0-0' }}</td>
+            <td class="text-right text-success fw-600">+₹{{ s.cashSales | number:'1.0-0' }}</td>
+            <td class="text-right text-danger">-₹{{ s.cashPaidOut | number:'1.0-0' }}</td>
+            <td class="text-right fw-700 text-dark">₹{{ s.expectedCash | number:'1.2-2' }}</td>
+            <td class="text-right fw-700">₹{{ (s.actualCash || s.expectedCash) | number:'1.2-2' }}</td>
+
+            <!-- Variance Reconciliation Badge -->
+            <td class="text-center">
+              <span class="variance-pill" [ngClass]="{
+                'var-balanced': !s.variance || s.variance === 0,
+                'var-surplus': s.variance && s.variance > 0,
+                'var-short': s.variance && s.variance < 0
+              }">
+                <span *ngIf="!s.variance || s.variance === 0">Balanced (₹0)</span>
+                <span *ngIf="s.variance && s.variance > 0">+₹{{ s.variance }} (Over)</span>
+                <span *ngIf="s.variance && s.variance < 0">-₹{{ -s.variance }} (Short)</span>
+              </span>
+            </td>
+
+            <td class="text-center">
+              <span class="badge" [class.badge-success]="s.status === 'ACTIVE'" [class.badge-neutral]="s.status === 'CLOSED'">
+                {{ s.status }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3: CASH PAID OUT ENTRIES -->
+  <div class="pos-card table-wrapper" *ngIf="activeTab === 'payouts'">
+    <div class="table-meta-bar">
+      <span>Showing <strong>{{ paidOutLogs.length }}</strong> petty cash expenditure records</span>
+      <button class="btn btn-sm btn-outline" (click)="openPayoutDialog()" *ngIf="activeShift">
+        + New Payout Entry
+      </button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date &amp; Time</th>
+            <th>Shift Code</th>
+            <th>Amount Paid (₹)</th>
+            <th>Reason / Purpose</th>
+            <th>Paid To (Recipient)</th>
+            <th>Approved By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of paidOutLogs">
+            <td class="text-muted font-mono text-xs">{{ p.timestamp }}</td>
+            <td><span class="shift-code-badge">{{ p.shiftCode }}</span></td>
+            <td class="fw-700 text-danger">₹{{ p.amount | number:'1.2-2' }}</td>
+            <td>{{ p.reason }}</td>
+            <td class="fw-600 text-dark">{{ p.paidTo }}</td>
+            <td class="text-muted">{{ p.approvedBy }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL 1: OPEN SHIFT DIALOG -->
+  <div class="modal-backdrop" *ngIf="showOpenShiftModal" (click)="closeModals()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Open New Cash Register Shift</h2>
+        <button class="modal-close-btn" (click)="closeModals()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form class="form-grid" (submit)="submitOpenShift(); $event.preventDefault()">
+          <div class="form-group full-width">
+            <label class="form-label">Opening Float Amount (₹) <span class="req">*</span></label>
+            <input 
+              type="number" 
+              [(ngModel)]="newOpeningFloat" 
+              name="newOpeningFloat" 
+              min="0" 
+              required 
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Shift Notes / Register Label</label>
+            <input 
+              type="text" 
+              [(ngModel)]="openShiftNotes" 
+              name="openShiftNotes" 
+              placeholder="e.g. Morning Shift Terminal 01" 
+              class="form-input"
+            />
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModals()">Cancel</button>
+        <button class="btn btn-primary" (click)="submitOpenShift()">
+          Confirm &amp; Open Shift
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: CLOSE & RECONCILE SHIFT DIALOG (Requirements 7 & 8) -->
+  <div class="modal-backdrop" *ngIf="showCloseShiftModal && activeShift" (click)="closeModals()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title text-danger">Close Shift &amp; Reconcile Cash</h2>
+        <button class="modal-close-btn" (click)="closeModals()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Expected Cash Breakdown Box -->
+        <div class="reconcile-expected-box">
+          <div class="rec-row">
+            <span>Opening Float:</span>
+            <span>₹{{ activeShift.openingFloat | number:'1.2-2' }}</span>
+          </div>
+          <div class="rec-row">
+            <span>+ Cash Sales Inflow:</span>
+            <span class="text-success">+₹{{ activeShift.cashSales | number:'1.2-2' }}</span>
+          </div>
+          <div class="rec-row">
+            <span>- Cash Paid Out:</span>
+            <span class="text-danger">-₹{{ activeShift.cashPaidOut | number:'1.2-2' }}</span>
+          </div>
+          <div class="rec-row rec-expected-total">
+            <span>Expected Cash Balance:</span>
+            <span class="fw-700 text-primary">₹{{ activeShift.expectedCash | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <form class="form-grid" (submit)="submitCloseShift(); $event.preventDefault()">
+          <div class="form-group full-width">
+            <label class="form-label">Counted Physical Cash in Drawer (₹) <span class="req">*</span></label>
+            <input 
+              type="number" 
+              [(ngModel)]="actualCountedCash" 
+              name="actualCountedCash" 
+              min="0" 
+              step="1"
+              required 
+              class="form-input actual-cash-input"
+            />
+          </div>
+
+          <!-- Live Variance Calculation Display -->
+          <div class="form-group full-width variance-preview-card" [ngClass]="{
+            'var-balanced-card': varianceStatus === 'BALANCED',
+            'var-surplus-card': varianceStatus === 'SURPLUS',
+            'var-short-card': varianceStatus === 'SHORTAGE'
+          }">
+            <div class="var-card-title">Reconciliation Variance:</div>
+            <div class="var-card-result">
+              <span *ngIf="varianceStatus === 'BALANCED'">Exact Match &bull; Balanced (₹0.00)</span>
+              <span *ngIf="varianceStatus === 'SURPLUS'">+₹{{ reconciliationVariance | number:'1.2-2' }} (Cash Over / Surplus)</span>
+              <span *ngIf="varianceStatus === 'SHORTAGE'">-₹{{ -reconciliationVariance | number:'1.2-2' }} (Cash Shortage / Deficit)</span>
+            </div>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Closing Reconciliation Notes</label>
+            <textarea 
+              [(ngModel)]="closeShiftNotes" 
+              name="closeShiftNotes" 
+              rows="2" 
+              placeholder="Remarks regarding discrepancy, denominations, or shift handover..." 
+              class="form-textarea">
+            </textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModals()">Cancel</button>
+        <button class="btn btn-danger" (click)="submitCloseShift()">
+          Finalize Shift Closing
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: RECORD CASH PAYOUT DIALOG -->
+  <div class="modal-backdrop" *ngIf="showPayoutModal" (click)="closeModals()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Record Cash Payout (Petty Cash)</h2>
+        <button class="modal-close-btn" (click)="closeModals()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form class="form-grid" (submit)="submitPayout(); $event.preventDefault()">
+          <div class="form-group full-width">
+            <label class="form-label">Amount to Pay Out (₹) <span class="req">*</span></label>
+            <input 
+              type="number" 
+              [(ngModel)]="payoutAmount" 
+              name="payoutAmount" 
+              min="1" 
+              required 
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Expense Reason <span class="req">*</span></label>
+            <select [(ngModel)]="payoutReason" name="payoutReason" class="form-select">
+              <option *ngFor="let pr of payoutReasons" [value]="pr">{{ pr }}</option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Recipient / Paid To <span class="req">*</span></label>
+            <input 
+              type="text" 
+              [(ngModel)]="payoutRecipient" 
+              name="payoutRecipient" 
+              required 
+              placeholder="e.g. Sri Balaji General Stores" 
+              class="form-input"
+            />
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModals()">Cancel</button>
+        <button class="btn btn-primary" (click)="submitPayout()">
+          Record Cash Payout
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

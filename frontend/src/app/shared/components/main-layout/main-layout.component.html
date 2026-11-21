@@ -1,0 +1,21 @@
+<div class="app-layout" [class.sidebar-collapsed]="isSidebarCollapsed">
+  <!-- Shared Left Sidebar -->
+  <app-sidebar 
+    [isCollapsed]="isSidebarCollapsed" 
+    (toggleCollapse)="toggleSidebar()">
+  </app-sidebar>
+
+  <!-- Main Content Wrapper -->
+  <div class="content-wrapper">
+    <!-- Shared Top Navbar -->
+    <app-navbar 
+      [isSidebarCollapsed]="isSidebarCollapsed" 
+      (toggleSidebar)="toggleSidebar()">
+    </app-navbar>
+
+    <!-- Dynamic Routed Content -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

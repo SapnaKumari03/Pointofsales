@@ -1,0 +1,74 @@
+.placeholder-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.bc-link {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.bc-sep {
+  color: var(--text-light);
+}
+
+.bc-current {
+  color: var(--text-muted);
+}
+
+.placeholder-card {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.placeholder-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-svg {
+  width: 32px;
+  height: 32px;
+}
+
+.placeholder-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.placeholder-desc {
+  max-width: 520px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.placeholder-meta {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.placeholder-actions {
+  margin-top: 12px;
+}

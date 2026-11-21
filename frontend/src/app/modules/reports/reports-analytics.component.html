@@ -1,0 +1,934 @@
+<div class="reports-container">
+  <!-- Top Header -->
+  <div class="page-header">
+    <div class="header-title-group">
+      <div class="title-with-badge">
+        <h1 class="page-title">Reports & Analytics</h1>
+        <span class="badge-status">Real-time Retail Intelligence</span>
+      </div>
+      <p class="page-subtitle">
+        Comprehensive sales intelligence, revenue trends, inventory valuation, GST tax compliance and tender analytics.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button class="pos-btn btn-secondary" (click)="recalculateReports()" title="Refresh Analytics Data">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        <span>Refresh</span>
+      </button>
+
+      <button class="pos-btn btn-primary" (click)="exportCurrentReport()" title="Export Current Report to CSV">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Export CSV</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter & Date Range Toolbar -->
+  <div class="filter-toolbar pos-card">
+    <div class="date-presets">
+      <span class="filter-label">Period:</span>
+      <button 
+        type="button" 
+        class="preset-chip" 
+        [class.active]="datePreset === 'TODAY'" 
+        (click)="setDatePreset('TODAY')">Today</button>
+      <button 
+        type="button" 
+        class="preset-chip" 
+        [class.active]="datePreset === 'YESTERDAY'" 
+        (click)="setDatePreset('YESTERDAY')">Yesterday</button>
+      <button 
+        type="button" 
+        class="preset-chip" 
+        [class.active]="datePreset === 'LAST_7_DAYS'" 
+        (click)="setDatePreset('LAST_7_DAYS')">Last 7 Days</button>
+      <button 
+        type="button" 
+        class="preset-chip" 
+        [class.active]="datePreset === 'THIS_MONTH'" 
+        (click)="setDatePreset('THIS_MONTH')">This Month</button>
+      <button 
+        type="button" 
+        class="preset-chip" 
+        [class.active]="datePreset === 'LAST_30_DAYS'" 
+        (click)="setDatePreset('LAST_30_DAYS')">Last 30 Days</button>
+      <button 
+        type="button" 
+        class="preset-chip" 
+        [class.active]="datePreset === 'ALL'" 
+        (click)="setDatePreset('ALL')">All Time</button>
+    </div>
+
+    <div class="custom-date-range">
+      <span class="filter-label">Custom:</span>
+      <div class="date-input-wrap">
+        <input 
+          type="date" 
+          class="date-input" 
+          [(ngModel)]="customStartDate" 
+          (change)="applyCustomDateFilter()" 
+          title="Start Date" />
+        <span class="date-sep">to</span>
+        <input 
+          type="date" 
+          class="date-input" 
+          [(ngModel)]="customEndDate" 
+          (change)="applyCustomDateFilter()" 
+          title="End Date" />
+      </div>
+      <button class="pos-btn btn-sm btn-outline" (click)="applyCustomDateFilter()">Apply</button>
+    </div>
+  </div>
+
+  <!-- Report Navigation Tabs -->
+  <div class="report-nav-tabs">
+    <button 
+      class="nav-tab" 
+      [class.active]="activeTab === 'sales'" 
+      (click)="setTab('sales')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <line x1="18" y1="20" x2="18" y2="10"></line>
+        <line x1="12" y1="20" x2="12" y2="4"></line>
+        <line x1="6" y1="20" x2="6" y2="14"></line>
+      </svg>
+      <span>Sales & Revenue</span>
+    </button>
+
+    <button 
+      class="nav-tab" 
+      [class.active]="activeTab === 'best-sellers'" 
+      (click)="setTab('best-sellers')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      </svg>
+      <span>Best-Selling Products</span>
+    </button>
+
+    <button 
+      class="nav-tab" 
+      [class.active]="activeTab === 'categories'" 
+      (click)="setTab('categories')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+      <span>Category Analysis</span>
+    </button>
+
+    <button 
+      class="nav-tab" 
+      [class.active]="activeTab === 'gst'" 
+      (click)="setTab('gst')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+        <line x1="2" y1="10" x2="22" y2="10"></line>
+      </svg>
+      <span>GST Tax Summary</span>
+    </button>
+
+    <button 
+      class="nav-tab" 
+      [class.active]="activeTab === 'payments'" 
+      (click)="setTab('payments')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+        <line x1="1" y1="10" x2="23" y2="10"></line>
+      </svg>
+      <span>Payment Modes</span>
+    </button>
+
+    <button 
+      class="nav-tab" 
+      [class.active]="activeTab === 'inventory'" 
+      (click)="setTab('inventory')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      </svg>
+      <span>Inventory Valuation</span>
+    </button>
+
+    <button 
+      class="nav-tab" 
+      [class.active]="activeTab === 'low-stock'" 
+      (click)="setTab('low-stock')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      <span>Low Stock Reorders</span>
+      <span class="tab-badge" *ngIf="lowStockItems.length > 0">{{ lowStockItems.length }}</span>
+    </button>
+  </div>
+
+  <!-- TAB 1: Sales & Revenue Trends -->
+  <div *ngIf="activeTab === 'sales'" class="tab-view-content">
+    <!-- Sales KPI Cards -->
+    <div class="kpi-grid">
+      <div class="pos-card kpi-card">
+        <div class="kpi-icon-wrap bg-primary-subtle text-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Net Revenue</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value">₹{{ salesSummary.totalRevenue | number:'1.2-2' }}</span>
+          </div>
+          <div class="kpi-footer">
+            <span>Peak: <strong>₹{{ salesSummary.highestDayRevenue | number:'1.0-0' }}</strong> ({{ salesSummary.highestDayLabel }})</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pos-card kpi-card">
+        <div class="kpi-icon-wrap bg-success-subtle text-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Billed Invoices</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value">{{ salesSummary.totalOrders }}</span>
+            <span class="unit-tag">Invoices</span>
+          </div>
+          <div class="kpi-footer">
+            <span>Average: <strong>{{ (salesSummary.totalOrders / (salesReportItems.length || 1)) | number:'1.1-1' }}</strong> orders/day</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pos-card kpi-card">
+        <div class="kpi-icon-wrap bg-info-subtle text-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Units Sold</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value">{{ salesSummary.totalUnitsSold }}</span>
+            <span class="unit-tag">Packs / Bags</span>
+          </div>
+          <div class="kpi-footer">
+            <span>Avg Basket Value: <strong>₹{{ salesSummary.averageOrderValue | number:'1.0-0' }}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pos-card kpi-card">
+        <div class="kpi-icon-wrap bg-warning-subtle text-warning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">GST Tax Collected</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value">₹{{ salesSummary.totalTax | number:'1.2-2' }}</span>
+          </div>
+          <div class="kpi-footer">
+            <span>Total Discounts Given: <strong>₹{{ salesSummary.totalDiscount | number:'1.0-0' }}</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sales Trend Chart Card -->
+    <div class="pos-card chart-section-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Sales Trajectory Trend Chart</h2>
+          <span class="card-subtitle">Revenue progression across time in Indian Rupees (₹)</span>
+        </div>
+
+        <div class="granularity-toggle">
+          <button 
+            type="button"
+            class="toggle-chip" 
+            [class.active]="aggregationPeriod === 'daily'" 
+            (click)="setAggregation('daily')">Daily</button>
+          <button 
+            type="button"
+            class="toggle-chip" 
+            [class.active]="aggregationPeriod === 'weekly'" 
+            (click)="setAggregation('weekly')">Weekly</button>
+          <button 
+            type="button"
+            class="toggle-chip" 
+            [class.active]="aggregationPeriod === 'monthly'" 
+            (click)="setAggregation('monthly')">Monthly</button>
+        </div>
+      </div>
+
+      <!-- Vector Bar Visualizer -->
+      <div class="chart-container" *ngIf="salesReportItems.length > 0; else noChartData">
+        <div class="chart-bars-wrap">
+          <div *ngFor="let item of salesReportItems" class="bar-col">
+            <div class="bar-popup">
+              <span class="popup-title">{{ item.periodLabel }}</span>
+              <span class="popup-amount">₹{{ item.netRevenue | number:'1.2-2' }}</span>
+              <span class="popup-sub">{{ item.orderCount }} orders ({{ item.unitsSold }} units)</span>
+            </div>
+            <div class="bar-track">
+              <div 
+                class="bar-fill" 
+                [class.peak-bar]="item.netRevenue === salesSummary.highestDayRevenue && salesSummary.highestDayRevenue > 0"
+                [style.height.%]="getChartBarHeight(item.netRevenue)">
+                <span class="bar-value-label" *ngIf="getChartBarHeight(item.netRevenue) > 25">₹{{ item.netRevenue | number:'1.0-0' }}</span>
+              </div>
+            </div>
+            <div class="bar-bottom-label" [title]="item.periodLabel">
+              {{ item.dateKey.substring(5) }}
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-legend">
+          <div class="legend-badge">
+            <span class="dot bg-primary"></span>
+            <span>Net Sales Volume</span>
+          </div>
+          <div class="legend-badge">
+            <span class="dot bg-success"></span>
+            <span>Period Peak Revenue Day</span>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noChartData>
+        <div class="empty-chart-state">
+          <p>No sales recorded in the selected period.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Sales Breakdown Table -->
+    <div class="pos-card table-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Sales & Revenue Breakdown by {{ aggregationPeriod | titlecase }}</h2>
+          <span class="card-subtitle">Granular summary of gross revenue, discounts, GST, and net collections</span>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="pos-table">
+          <thead>
+            <tr>
+              <th>Period / Date</th>
+              <th class="text-center">Orders</th>
+              <th class="text-center">Units Sold</th>
+              <th class="text-right">Gross Sales</th>
+              <th class="text-right">Discounts</th>
+              <th class="text-right">GST Tax</th>
+              <th class="text-right">Net Revenue</th>
+              <th class="text-right">Avg Basket</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of salesReportItems">
+              <td class="fw-600">{{ row.periodLabel }}</td>
+              <td class="text-center"><span class="badge badge-light">{{ row.orderCount }}</span></td>
+              <td class="text-center">{{ row.unitsSold }}</td>
+              <td class="text-right text-muted">₹{{ row.grossSales | number:'1.2-2' }}</td>
+              <td class="text-right text-danger">-₹{{ row.discountAmount | number:'1.2-2' }}</td>
+              <td class="text-right text-warning">+₹{{ row.taxCollected | number:'1.2-2' }}</td>
+              <td class="text-right fw-700 text-primary">₹{{ row.netRevenue | number:'1.2-2' }}</td>
+              <td class="text-right font-mono">₹{{ row.averageOrderValue | number:'1.0-0' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-totals-row">
+              <td><strong>TOTALS ({{ salesReportItems.length }} periods)</strong></td>
+              <td class="text-center"><strong>{{ salesSummary.totalOrders }}</strong></td>
+              <td class="text-center"><strong>{{ salesSummary.totalUnitsSold }}</strong></td>
+              <td class="text-right"><strong>₹{{ (salesSummary.totalRevenue + salesSummary.totalDiscount) | number:'1.2-2' }}</strong></td>
+              <td class="text-right text-danger"><strong>-₹{{ salesSummary.totalDiscount | number:'1.2-2' }}</strong></td>
+              <td class="text-right text-warning"><strong>₹{{ salesSummary.totalTax | number:'1.2-2' }}</strong></td>
+              <td class="text-right fw-800 text-success"><strong>₹{{ salesSummary.totalRevenue | number:'1.2-2' }}</strong></td>
+              <td class="text-right font-mono"><strong>₹{{ salesSummary.averageOrderValue | number:'1.0-0' }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Best-Selling Products -->
+  <div *ngIf="activeTab === 'best-sellers'" class="tab-view-content">
+    <div class="pos-card table-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Best-Selling Products & SKU Velocity</h2>
+          <span class="card-subtitle">Fastest moving inventory ranked by units sold and gross margin generation</span>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="pos-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">Rank</th>
+              <th>Product Name & SKU</th>
+              <th>Category</th>
+              <th class="text-center">Units Sold</th>
+              <th class="text-right">Total Revenue</th>
+              <th class="text-right">Cost Value</th>
+              <th class="text-right">Gross Profit</th>
+              <th class="text-center">Margin %</th>
+              <th class="text-center">Stock Status</th>
+              <th style="width: 140px;">Market Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of bestSellers">
+              <td>
+                <span class="rank-badge" [ngClass]="{
+                  'rank-1': item.rank === 1,
+                  'rank-2': item.rank === 2,
+                  'rank-3': item.rank === 3,
+                  'rank-other': item.rank > 3
+                }">
+                  #{{ item.rank }}
+                </span>
+              </td>
+              <td>
+                <div class="product-cell-group">
+                  <span class="item-name">{{ item.name }}</span>
+                  <span class="item-sku font-mono">{{ item.sku }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="category-pill">{{ item.category }}</span>
+              </td>
+              <td class="text-center fw-700">
+                <span class="units-sold-bubble">{{ item.unitsSold }}</span>
+              </td>
+              <td class="text-right fw-700 text-primary">₹{{ item.revenue | number:'1.2-2' }}</td>
+              <td class="text-right text-muted">₹{{ item.cost | number:'1.2-2' }}</td>
+              <td class="text-right fw-700 text-success">+₹{{ item.grossProfit | number:'1.2-2' }}</td>
+              <td class="text-center">
+                <span class="margin-badge">{{ item.profitMarginPercent }}%</span>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="{
+                  'badge-success': item.stockStatus === 'In Stock',
+                  'badge-warning': item.stockStatus === 'Low Stock',
+                  'badge-danger': item.stockStatus === 'Out of Stock'
+                }">
+                  {{ item.currentStock }} in stock
+                </span>
+              </td>
+              <td>
+                <div class="share-cell">
+                  <div class="share-bar-track">
+                    <div class="share-bar-fill" [style.width.%]="item.marketSharePercent"></div>
+                  </div>
+                  <span class="share-pct">{{ item.marketSharePercent }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Category Analysis -->
+  <div *ngIf="activeTab === 'categories'" class="tab-view-content">
+    <!-- Category Cards Grid -->
+    <div class="category-cards-grid">
+      <div *ngFor="let cat of categorySales" class="pos-card category-summary-card">
+        <div class="cat-card-header">
+          <span class="cat-title">{{ cat.category }}</span>
+          <span class="cat-share-tag">{{ cat.revenueSharePercent }}% Share</span>
+        </div>
+        <div class="cat-revenue-amount">₹{{ cat.totalRevenue | number:'1.2-2' }}</div>
+        <div class="cat-meta-row">
+          <span><strong>{{ cat.unitsSold }}</strong> units sold</span>
+          <span>In <strong>{{ cat.ordersCount }}</strong> orders</span>
+        </div>
+        <div class="cat-progress-track">
+          <div class="cat-progress-bar" [style.width.%]="cat.revenueSharePercent"></div>
+        </div>
+        <div class="cat-footer-row">
+          <span>Avg Unit Price: ₹{{ cat.averageUnitSellingPrice | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Detailed Table -->
+    <div class="pos-card table-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Category Sales & Contribution Table</h2>
+          <span class="card-subtitle">Retail department volume and sales share</span>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="pos-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th class="text-center">Units Sold</th>
+              <th class="text-center">Orders Count</th>
+              <th class="text-right">Total Revenue</th>
+              <th class="text-right">Avg Unit Price</th>
+              <th style="width: 200px;">Revenue Contribution</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cat of categorySales">
+              <td class="fw-600">{{ cat.category }}</td>
+              <td class="text-center">{{ cat.unitsSold }}</td>
+              <td class="text-center">{{ cat.ordersCount }}</td>
+              <td class="text-right fw-700 text-primary">₹{{ cat.totalRevenue | number:'1.2-2' }}</td>
+              <td class="text-right font-mono">₹{{ cat.averageUnitSellingPrice | number:'1.2-2' }}</td>
+              <td>
+                <div class="share-cell">
+                  <div class="share-bar-track">
+                    <div class="share-bar-fill" [style.width.%]="cat.revenueSharePercent"></div>
+                  </div>
+                  <span class="share-pct">{{ cat.revenueSharePercent }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: GST Tax Summary -->
+  <div *ngIf="activeTab === 'gst'" class="tab-view-content">
+    <div class="pos-card gst-banner-card">
+      <div class="banner-icon-col text-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </div>
+      <div class="banner-content">
+        <h3 class="banner-title">Indian GST Statutory Tax Compliance</h3>
+        <p class="banner-desc">
+          Intrastate retail sales are split in a 50:50 ratio between <strong>Central GST (CGST)</strong> and <strong>State GST (SGST)</strong>. 
+          All rates follow CBIC schedules across 0% (Exempt), 5%, 12%, and 18% slabs.
+        </p>
+      </div>
+      <div class="banner-kpis">
+        <div class="bkpi-item">
+          <span class="bkpi-lbl">Total Taxable Value</span>
+          <span class="bkpi-val">₹{{ gstReport.totalTaxableAmount | number:'1.2-2' }}</span>
+        </div>
+        <div class="bkpi-item">
+          <span class="bkpi-lbl">Total GST Collected</span>
+          <span class="bkpi-val text-success">₹{{ gstReport.grandTotalGst | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- GST Slabs Table -->
+    <div class="pos-card table-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Tax Slab Breakdown (CGST & SGST Split)</h2>
+          <span class="card-subtitle">Itemized tax liabilities by statutory tax rates</span>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="pos-table">
+          <thead>
+            <tr>
+              <th>GST Tax Slab</th>
+              <th class="text-right">Taxable Turnover</th>
+              <th class="text-center">CGST Rate</th>
+              <th class="text-right">CGST Collected</th>
+              <th class="text-center">SGST Rate</th>
+              <th class="text-right">SGST Collected</th>
+              <th class="text-right">Total Tax (CGST+SGST)</th>
+              <th class="text-center">Items Billed</th>
+              <th class="text-center">Invoices</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let slab of gstReport.slabs">
+              <td class="fw-700">
+                <span class="badge" [ngClass]="{
+                  'badge-light': slab.taxRate === 0,
+                  'badge-primary': slab.taxRate === 5,
+                  'badge-warning': slab.taxRate === 12,
+                  'badge-danger': slab.taxRate === 18
+                }">
+                  {{ slab.rateLabel }}
+                </span>
+              </td>
+              <td class="text-right font-mono">₹{{ slab.taxableAmount | number:'1.2-2' }}</td>
+              <td class="text-center text-muted">{{ slab.cgstRate }}%</td>
+              <td class="text-right text-primary">₹{{ slab.cgstAmount | number:'1.2-2' }}</td>
+              <td class="text-center text-muted">{{ slab.sgstRate }}%</td>
+              <td class="text-right text-primary">₹{{ slab.sgstAmount | number:'1.2-2' }}</td>
+              <td class="text-right fw-800 text-success">₹{{ slab.totalGst | number:'1.2-2' }}</td>
+              <td class="text-center">{{ slab.itemCount }}</td>
+              <td class="text-center">{{ slab.invoiceCount }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-totals-row">
+              <td><strong>TOTAL TAX LIABILITY</strong></td>
+              <td class="text-right"><strong>₹{{ gstReport.totalTaxableAmount | number:'1.2-2' }}</strong></td>
+              <td class="text-center">-</td>
+              <td class="text-right text-primary"><strong>₹{{ gstReport.totalCgst | number:'1.2-2' }}</strong></td>
+              <td class="text-center">-</td>
+              <td class="text-right text-primary"><strong>₹{{ gstReport.totalSgst | number:'1.2-2' }}</strong></td>
+              <td class="text-right fw-800 text-success"><strong>₹{{ gstReport.grandTotalGst | number:'1.2-2' }}</strong></td>
+              <td class="text-center">-</td>
+              <td class="text-center">-</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: Payment Modes -->
+  <div *ngIf="activeTab === 'payments'" class="tab-view-content">
+    <div class="payment-cards-grid">
+      <div *ngFor="let pay of paymentMethodReports" class="pos-card payment-mode-card">
+        <div class="pay-card-top">
+          <div class="pay-icon-box" [ngClass]="{
+            'bg-success-subtle text-success': pay.method === 'CASH',
+            'bg-primary-subtle text-primary': pay.method === 'UPI',
+            'bg-purple-subtle text-purple': pay.method === 'CARD'
+          }">
+            <svg *ngIf="pay.method === 'CASH'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+              <circle cx="12" cy="12" r="2"></circle>
+              <path d="M6 12h.01M18 12h.01"></path>
+            </svg>
+            <svg *ngIf="pay.method === 'UPI'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <svg *ngIf="pay.method === 'CARD'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+          </div>
+          <div class="pay-title-group">
+            <span class="pay-title">{{ pay.label }}</span>
+            <span class="pay-share-badge">{{ pay.sharePercent }}% Volume</span>
+          </div>
+        </div>
+
+        <div class="pay-volume-val">₹{{ pay.totalAmount | number:'1.2-2' }}</div>
+
+        <div class="pay-stats-row">
+          <div class="pstat">
+            <span class="pstat-lbl">Transactions</span>
+            <span class="pstat-val">{{ pay.transactionCount }}</span>
+          </div>
+          <div class="pstat">
+            <span class="pstat-lbl">Average Ticket</span>
+            <span class="pstat-val font-mono">₹{{ pay.averageTicketSize | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <div class="pay-progress-track">
+          <div 
+            class="pay-progress-bar" 
+            [class.bg-success]="pay.method === 'CASH'"
+            [class.bg-primary]="pay.method === 'UPI'"
+            [class.bg-purple]="pay.method === 'CARD'"
+            [style.width.%]="pay.sharePercent">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparative Table -->
+    <div class="pos-card table-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Settlement Channel Comparison</h2>
+          <span class="card-subtitle">Channel velocity and transaction volumes</span>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="pos-table">
+          <thead>
+            <tr>
+              <th>Settlement Channel</th>
+              <th class="text-right">Total Settled Volume</th>
+              <th class="text-center">Transaction Count</th>
+              <th class="text-center">Share of Total Sales</th>
+              <th class="text-right">Average Transaction Size</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of paymentMethodReports">
+              <td class="fw-600">{{ p.label }}</td>
+              <td class="text-right fw-700 text-primary">₹{{ p.totalAmount | number:'1.2-2' }}</td>
+              <td class="text-center"><span class="badge badge-light">{{ p.transactionCount }}</span></td>
+              <td class="text-center fw-600">{{ p.sharePercent }}%</td>
+              <td class="text-right font-mono">₹{{ p.averageTicketSize | number:'1.0-0' }}</td>
+              <td><span class="badge badge-success">Reconciled</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: Inventory Valuation -->
+  <div *ngIf="activeTab === 'inventory'" class="tab-view-content">
+    <!-- Valuation KPI Summary -->
+    <div class="kpi-grid">
+      <div class="pos-card kpi-card">
+        <div class="kpi-icon-wrap bg-primary-subtle text-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total SKUs in Catalog</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value">{{ inventorySummary.totalSkus }}</span>
+            <span class="unit-tag">Items</span>
+          </div>
+          <div class="kpi-footer">
+            <span>Total Units: <strong>{{ inventorySummary.totalStockUnits }}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pos-card kpi-card">
+        <div class="kpi-icon-wrap bg-info-subtle text-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Stock at Cost Value</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value">₹{{ inventorySummary.totalCostValuation | number:'1.2-2' }}</span>
+          </div>
+          <div class="kpi-footer">
+            <span>Invested purchase capital</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pos-card kpi-card">
+        <div class="kpi-icon-wrap bg-warning-subtle text-warning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Stock at Retail Value</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value">₹{{ inventorySummary.totalRetailValuation | number:'1.2-2' }}</span>
+          </div>
+          <div class="kpi-footer">
+            <span>Projected sales revenue</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pos-card kpi-card">
+        <div class="kpi-icon-wrap bg-success-subtle text-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Projected Gross Margin</span>
+          <div class="kpi-value-row">
+            <span class="kpi-value">₹{{ inventorySummary.totalProjectedProfit | number:'1.2-2' }}</span>
+          </div>
+          <div class="kpi-footer">
+            <span>Average Margin: <strong>{{ inventorySummary.overallMarginPercent }}%</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Valuation Detail Table -->
+    <div class="pos-card table-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Inventory Valuation Catalog Breakdown</h2>
+          <span class="card-subtitle">Unit cost, selling price and margin spread across entire catalog</span>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="pos-table">
+          <thead>
+            <tr>
+              <th>SKU & Product Name</th>
+              <th>Category</th>
+              <th class="text-center">Stock Qty</th>
+              <th class="text-right">Unit Cost</th>
+              <th class="text-right">Selling Price</th>
+              <th class="text-right">Cost Value</th>
+              <th class="text-right">Retail Value</th>
+              <th class="text-right">Profit Spread</th>
+              <th class="text-center">Margin %</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of inventoryValuationItems">
+              <td>
+                <div class="product-cell-group">
+                  <span class="item-name">{{ item.name }}</span>
+                  <span class="item-sku font-mono">{{ item.sku }}</span>
+                </div>
+              </td>
+              <td><span class="category-pill">{{ item.category }}</span></td>
+              <td class="text-center fw-700">{{ item.stockQuantity }} {{ item.unit }}</td>
+              <td class="text-right text-muted font-mono">₹{{ item.costPrice | number:'1.2-2' }}</td>
+              <td class="text-right font-mono">₹{{ item.sellingPrice | number:'1.2-2' }}</td>
+              <td class="text-right font-mono">₹{{ item.totalCostValue | number:'1.2-2' }}</td>
+              <td class="text-right fw-700 text-primary font-mono">₹{{ item.totalRetailValue | number:'1.2-2' }}</td>
+              <td class="text-right fw-700 text-success font-mono">+₹{{ item.projectedProfit | number:'1.2-2' }}</td>
+              <td class="text-center">
+                <span class="margin-badge">{{ item.marginPercent }}%</span>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="{
+                  'badge-success': item.status === 'Optimal',
+                  'badge-warning': item.status === 'Low Stock',
+                  'badge-danger': item.status === 'Out of Stock'
+                }">
+                  {{ item.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-totals-row">
+              <td><strong>CATALOG TOTALS</strong></td>
+              <td>-</td>
+              <td class="text-center"><strong>{{ inventorySummary.totalStockUnits }} units</strong></td>
+              <td class="text-right">-</td>
+              <td class="text-right">-</td>
+              <td class="text-right"><strong>₹{{ inventorySummary.totalCostValuation | number:'1.2-2' }}</strong></td>
+              <td class="text-right text-primary"><strong>₹{{ inventorySummary.totalRetailValuation | number:'1.2-2' }}</strong></td>
+              <td class="text-right text-success"><strong>₹{{ inventorySummary.totalProjectedProfit | number:'1.2-2' }}</strong></td>
+              <td class="text-center"><strong>{{ inventorySummary.overallMarginPercent }}%</strong></td>
+              <td>-</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 7: Low Stock Reorders -->
+  <div *ngIf="activeTab === 'low-stock'" class="tab-view-content">
+    <!-- Reorder Planning Table -->
+    <div class="pos-card table-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Low Stock & Out-of-Stock Reorder Planning Report</h2>
+          <span class="card-subtitle">Items that have fallen below safety reorder threshold with recommended purchase volume</span>
+        </div>
+      </div>
+
+      <div class="table-responsive" *ngIf="lowStockItems.length > 0; else allStockHealthy">
+        <table class="pos-table">
+          <thead>
+            <tr>
+              <th>Product Name & SKU</th>
+              <th>Category</th>
+              <th class="text-center">Current Stock</th>
+              <th class="text-center">Min Threshold</th>
+              <th class="text-center">Shortfall</th>
+              <th class="text-center">Recommended PO Qty</th>
+              <th class="text-right">Unit Cost Price</th>
+              <th class="text-right">Estimated PO Value</th>
+              <th class="text-center">Urgency</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of lowStockItems">
+              <td>
+                <div class="product-cell-group">
+                  <span class="item-name">{{ item.name }}</span>
+                  <span class="item-sku font-mono">{{ item.sku }}</span>
+                </div>
+              </td>
+              <td><span class="category-pill">{{ item.category }}</span></td>
+              <td class="text-center fw-700" [class.text-danger]="item.currentStock === 0" [class.text-warning]="item.currentStock > 0">
+                {{ item.currentStock }} {{ item.unit }}
+              </td>
+              <td class="text-center">{{ item.minStockLevel }} {{ item.unit }}</td>
+              <td class="text-center text-danger fw-700">-{{ item.shortfall }}</td>
+              <td class="text-center">
+                <span class="reorder-qty-pill">{{ item.recommendedReorderQty }} {{ item.unit }}</span>
+              </td>
+              <td class="text-right font-mono">₹{{ item.unitCostPrice | number:'1.2-2' }}</td>
+              <td class="text-right fw-700 text-primary font-mono">₹{{ item.estimatedReorderCost | number:'1.2-2' }}</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="{
+                  'badge-danger': item.urgency === 'OUT_OF_STOCK',
+                  'badge-warning': item.urgency === 'CRITICAL',
+                  'badge-info': item.urgency === 'LOW'
+                }">
+                  {{ item.urgency === 'OUT_OF_STOCK' ? 'OUT OF STOCK' : (item.urgency === 'CRITICAL' ? 'CRITICAL LOW' : 'LOW STOCK') }}
+                </span>
+              </td>
+              <td>
+                <span class="supplier-status-tag">{{ item.supplierStatus }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #allStockHealthy>
+        <div class="healthy-stock-message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="healthy-icon text-success">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <h3>All Products are Well Stocked!</h3>
+          <p>No products are currently under their safety reorder thresholds.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>

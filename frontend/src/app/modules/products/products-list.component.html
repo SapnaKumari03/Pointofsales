@@ -1,0 +1,531 @@
+<div class="products-container">
+  <!-- Top Header Banner -->
+  <div class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Products &amp; Catalog Management</h1>
+      <p class="page-subtitle">Manage retail item catalog, SKU codes, barcodes, pricing, and safety stock levels</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openAddModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Add New Product</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Metric Filter Chips -->
+  <div class="kpi-chips-row">
+    <div 
+      class="chip-card" 
+      [class.active]="selectedStockFilter === 'ALL'"
+      (click)="selectedStockFilter = 'ALL'">
+      <span class="chip-label">Total Catalog</span>
+      <span class="chip-val">{{ totalCount }}</span>
+    </div>
+    <div 
+      class="chip-card chip-success" 
+      [class.active]="selectedStockFilter === 'IN_STOCK'"
+      (click)="selectedStockFilter = 'IN_STOCK'">
+      <span class="chip-label">In Stock</span>
+      <span class="chip-val">{{ inStockCount }}</span>
+    </div>
+    <div 
+      class="chip-card chip-warning" 
+      [class.active]="selectedStockFilter === 'LOW_STOCK'"
+      (click)="selectedStockFilter = 'LOW_STOCK'">
+      <span class="chip-label">Low Stock Alert</span>
+      <span class="chip-val">{{ lowStockCount }}</span>
+    </div>
+    <div 
+      class="chip-card chip-danger" 
+      [class.active]="selectedStockFilter === 'OUT_OF_STOCK'"
+      (click)="selectedStockFilter = 'OUT_OF_STOCK'">
+      <span class="chip-label">Out of Stock</span>
+      <span class="chip-val">{{ outOfStockCount }}</span>
+    </div>
+  </div>
+
+  <!-- Filters & Search Toolbar -->
+  <div class="pos-card filter-toolbar">
+    <!-- Search Bar: Name, SKU, Barcode -->
+    <div class="search-input-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        placeholder="Search by product name, SKU, or barcode number..." 
+        class="filter-search-input"
+      />
+      <button *ngIf="searchTerm" class="clear-search-btn" (click)="searchTerm = ''" title="Clear search">
+        &times;
+      </button>
+    </div>
+
+    <!-- Category Dropdown -->
+    <div class="select-wrapper">
+      <label class="filter-label">Category:</label>
+      <select [(ngModel)]="selectedCategory" class="filter-select">
+        <option value="ALL">All Categories</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <!-- Stock Status Dropdown -->
+    <div class="select-wrapper">
+      <label class="filter-label">Stock Status:</label>
+      <select [(ngModel)]="selectedStockFilter" class="filter-select">
+        <option value="ALL">All Stock Statuses</option>
+        <option value="IN_STOCK">In Stock (> Safety Level)</option>
+        <option value="LOW_STOCK">Low Stock (Needs Reorder)</option>
+        <option value="OUT_OF_STOCK">Out of Stock (Zero Units)</option>
+        <option value="INACTIVE">Inactive Products</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Responsive Product Table -->
+  <div class="pos-card table-wrapper">
+    <div class="table-meta-bar">
+      <span class="results-count">
+        Showing <strong>{{ filteredProducts.length }}</strong> of {{ products.length }} products
+      </span>
+      <span *ngIf="searchTerm || selectedCategory !== 'ALL' || selectedStockFilter !== 'ALL'" class="active-filter-hint">
+        (Filters applied)
+      </span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Product &amp; Barcode</th>
+            <th>SKU</th>
+            <th>Category</th>
+            <th class="text-right">Cost Price (₹)</th>
+            <th class="text-right">Selling Price (₹)</th>
+            <th class="text-center">GST Tax</th>
+            <th class="text-center">Stock Level</th>
+            <th class="text-center">Stock Status</th>
+            <th class="text-center">Product Status</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filteredProducts">
+            <!-- Product Name & Barcode -->
+            <td>
+              <div class="product-title-row">
+                <span class="product-name" (click)="openDetailsModal(p)">{{ p.name }}</span>
+              </div>
+              <div class="barcode-subtext">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                  <path d="M3 5v14M7 5v14M11 5v14M15 5v14M19 5v14M21 5v14"></path>
+                </svg>
+                <span>{{ p.barcode }}</span>
+              </div>
+            </td>
+
+            <!-- SKU -->
+            <td>
+              <span class="sku-badge">{{ p.sku }}</span>
+            </td>
+
+            <!-- Category -->
+            <td>
+              <span class="category-pill">{{ p.category }}</span>
+            </td>
+
+            <!-- Cost Price -->
+            <td class="text-right text-muted">
+              ₹{{ p.costPrice | number:'1.2-2' }}
+            </td>
+
+            <!-- Selling Price & Margin -->
+            <td class="text-right">
+              <div class="fw-700 text-dark">₹{{ p.sellingPrice | number:'1.2-2' }}</div>
+              <div class="margin-subtext text-success" title="Gross Profit Margin">
+                +{{ calculateMargin(p.costPrice, p.sellingPrice) }}% margin
+              </div>
+            </td>
+
+            <!-- GST Tax -->
+            <td class="text-center">
+              <span class="tax-tag">{{ p.taxRate }}% GST</span>
+            </td>
+
+            <!-- Stock Quantity -->
+            <td class="text-center">
+              <div class="stock-qty-val fw-700" [ngClass]="{
+                'text-success': getStockStatus(p) === 'IN_STOCK',
+                'text-warning': getStockStatus(p) === 'LOW_STOCK',
+                'text-danger': getStockStatus(p) === 'OUT_OF_STOCK'
+              }">
+                {{ p.stockQuantity }} {{ p.unit }}
+              </div>
+              <div class="min-level-text">Min: {{ p.minStockLevel }}</div>
+            </td>
+
+            <!-- Stock Status Indicator -->
+            <td class="text-center">
+              <span class="badge" [ngClass]="{
+                'badge-success': getStockStatus(p) === 'IN_STOCK',
+                'badge-warning': getStockStatus(p) === 'LOW_STOCK',
+                'badge-danger': getStockStatus(p) === 'OUT_OF_STOCK'
+              }">
+                <span *ngIf="getStockStatus(p) === 'IN_STOCK'">● In Stock</span>
+                <span *ngIf="getStockStatus(p) === 'LOW_STOCK'">⚠ Low Stock</span>
+                <span *ngIf="getStockStatus(p) === 'OUT_OF_STOCK'">✕ Out of Stock</span>
+              </span>
+            </td>
+
+            <!-- Product Status Indicator -->
+            <td class="text-center">
+              <span class="badge" [class.badge-primary]="p.status === 'ACTIVE'" [class.badge-neutral]="p.status === 'INACTIVE'">
+                {{ p.status }}
+              </span>
+            </td>
+
+            <!-- Actions: View, Edit, Delete -->
+            <td class="text-center">
+              <div class="action-buttons-group">
+                <button class="action-btn" (click)="openDetailsModal(p)" title="View Details">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+                <button class="action-btn" (click)="openEditModal(p)" title="Edit Product">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button class="action-btn text-danger-hover" (click)="openDeleteModal(p)" title="Delete Product">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="filteredProducts.length === 0">
+            <td colspan="10" class="empty-state-cell">
+              <div class="empty-state-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="42" height="42" class="text-muted">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <div class="empty-title">No matching products found</div>
+                <div class="empty-subtitle">Try adjusting your search query, barcode, or category filter</div>
+                <button class="btn btn-outline" (click)="searchTerm = ''; selectedCategory = 'ALL'; selectedStockFilter = 'ALL'">
+                  Reset Filters
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL 1: ADD / EDIT PRODUCT FORM -->
+  <div class="modal-backdrop" *ngIf="showFormModal" (click)="closeFormModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ isEditMode ? 'Edit Product Catalog Item' : 'Add New Retail Product' }}</h2>
+        <button class="modal-close-btn" (click)="closeFormModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form class="form-grid" (submit)="saveProduct(); $event.preventDefault()">
+          <!-- Product Name -->
+          <div class="form-group full-width">
+            <label class="form-label">Product Name <span class="req">*</span></label>
+            <input 
+              type="text" 
+              [(ngModel)]="formData.name" 
+              name="name" 
+              required 
+              placeholder="e.g. Aashirvaad Shudh Chakki Atta 5kg" 
+              class="form-input"
+            />
+          </div>
+
+          <!-- SKU Code -->
+          <div class="form-group">
+            <label class="form-label">SKU Code <span class="req">*</span></label>
+            <input 
+              type="text" 
+              [(ngModel)]="formData.sku" 
+              name="sku" 
+              required 
+              placeholder="e.g. GRO-ATT-001" 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Barcode (EAN/UPC) -->
+          <div class="form-group">
+            <label class="form-label">Barcode (EAN-13) <span class="req">*</span></label>
+            <input 
+              type="text" 
+              [(ngModel)]="formData.barcode" 
+              name="barcode" 
+              required 
+              placeholder="e.g. 8901030383701" 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Category -->
+          <div class="form-group">
+            <label class="form-label">Category <span class="req">*</span></label>
+            <input 
+              type="text" 
+              [(ngModel)]="formData.category" 
+              name="category" 
+              required 
+              placeholder="e.g. Flour & Grains" 
+              class="form-input"
+              list="category-suggestions"
+            />
+            <datalist id="category-suggestions">
+              <option *ngFor="let c of categories" [value]="c"></option>
+            </datalist>
+          </div>
+
+          <!-- Unit of Measurement -->
+          <div class="form-group">
+            <label class="form-label">Unit of Measure</label>
+            <select [(ngModel)]="formData.unit" name="unit" class="form-select">
+              <option *ngFor="let u of unitOptions" [value]="u">{{ u }}</option>
+            </select>
+          </div>
+
+          <!-- Cost Price (CP) -->
+          <div class="form-group">
+            <label class="form-label">Cost Price (₹ CP) <span class="req">*</span></label>
+            <input 
+              type="number" 
+              [(ngModel)]="formData.costPrice" 
+              name="costPrice" 
+              min="0" 
+              step="0.01" 
+              required 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Selling Price (SP) -->
+          <div class="form-group">
+            <label class="form-label">Selling Price (₹ MRP/SP) <span class="req">*</span></label>
+            <input 
+              type="number" 
+              [(ngModel)]="formData.sellingPrice" 
+              name="sellingPrice" 
+              min="0" 
+              step="0.01" 
+              required 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Profit Margin Banner -->
+          <div class="form-group full-width margin-preview-box">
+            <span>Calculated Gross Margin:</span>
+            <strong>₹{{ (formData.sellingPrice - formData.costPrice) | number:'1.2-2' }} ({{ calculateMargin(formData.costPrice, formData.sellingPrice) }}%)</strong>
+          </div>
+
+          <!-- Tax Rate GST -->
+          <div class="form-group">
+            <label class="form-label">GST Tax Rate</label>
+            <select [(ngModel)]="formData.taxRate" name="taxRate" class="form-select">
+              <option *ngFor="let t of taxOptions" [value]="t">{{ t }}% GST</option>
+            </select>
+          </div>
+
+          <!-- Initial Stock Quantity -->
+          <div class="form-group">
+            <label class="form-label">Current Stock Quantity</label>
+            <input 
+              type="number" 
+              [(ngModel)]="formData.stockQuantity" 
+              name="stockQuantity" 
+              min="0" 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Minimum Stock Level -->
+          <div class="form-group">
+            <label class="form-label">Minimum Safety Level (Reorder Point)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="formData.minStockLevel" 
+              name="minStockLevel" 
+              min="0" 
+              class="form-input"
+            />
+          </div>
+
+          <!-- Product Status -->
+          <div class="form-group">
+            <label class="form-label">Product Status</label>
+            <select [(ngModel)]="formData.status" name="status" class="form-select">
+              <option value="ACTIVE">ACTIVE (Ready for POS)</option>
+              <option value="INACTIVE">INACTIVE (Hidden from POS)</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group full-width">
+            <label class="form-label">Product Description</label>
+            <textarea 
+              [(ngModel)]="formData.description" 
+              name="description" 
+              rows="2" 
+              placeholder="Additional product specifications, brand notes, etc." 
+              class="form-textarea">
+            </textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" type="button" (click)="closeFormModal()">Cancel</button>
+        <button class="btn btn-primary" type="button" (click)="saveProduct()">
+          {{ isEditMode ? 'Save Changes' : 'Create Product' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: PRODUCT DETAILS VIEW -->
+  <div class="modal-backdrop" *ngIf="showDetailsModal && selectedProduct" (click)="closeDetailsModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <span class="badge badge-primary">{{ selectedProduct.category }}</span>
+          <h2 class="modal-title">{{ selectedProduct.name }}</h2>
+        </div>
+        <button class="modal-close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Key Metrics Grid -->
+        <div class="details-stats-grid">
+          <div class="detail-stat-box">
+            <span class="stat-label">Selling Price</span>
+            <span class="stat-value text-dark">₹{{ selectedProduct.sellingPrice | number:'1.2-2' }}</span>
+            <span class="stat-sub">Cost: ₹{{ selectedProduct.costPrice | number:'1.2-2' }}</span>
+          </div>
+
+          <div class="detail-stat-box">
+            <span class="stat-label">Stock Balance</span>
+            <span class="stat-value" [ngClass]="{
+              'text-success': getStockStatus(selectedProduct) === 'IN_STOCK',
+              'text-warning': getStockStatus(selectedProduct) === 'LOW_STOCK',
+              'text-danger': getStockStatus(selectedProduct) === 'OUT_OF_STOCK'
+            }">
+              {{ selectedProduct.stockQuantity }} {{ selectedProduct.unit }}
+            </span>
+            <span class="stat-sub">Safety Level: {{ selectedProduct.minStockLevel }}</span>
+          </div>
+
+          <div class="detail-stat-box">
+            <span class="stat-label">Gross Margin</span>
+            <span class="stat-value text-success">
+              +{{ calculateMargin(selectedProduct.costPrice, selectedProduct.sellingPrice) }}%
+            </span>
+            <span class="stat-sub">₹{{ (selectedProduct.sellingPrice - selectedProduct.costPrice) | number:'1.2-2' }} / unit</span>
+          </div>
+
+          <div class="detail-stat-box">
+            <span class="stat-label">Taxation</span>
+            <span class="stat-value">{{ selectedProduct.taxRate }}% GST</span>
+            <span class="stat-sub">HSN Compliant</span>
+          </div>
+        </div>
+
+        <!-- Metadata List -->
+        <div class="details-list">
+          <div class="detail-row">
+            <span class="detail-key">SKU Code:</span>
+            <span class="detail-val font-mono">{{ selectedProduct.sku }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Barcode (EAN-13):</span>
+            <span class="detail-val font-mono">{{ selectedProduct.barcode }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Stock Status:</span>
+            <span class="badge" [ngClass]="{
+              'badge-success': getStockStatus(selectedProduct) === 'IN_STOCK',
+              'badge-warning': getStockStatus(selectedProduct) === 'LOW_STOCK',
+              'badge-danger': getStockStatus(selectedProduct) === 'OUT_OF_STOCK'
+            }">
+              {{ getStockStatus(selectedProduct) }}
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Catalog Status:</span>
+            <span class="badge badge-primary">{{ selectedProduct.status }}</span>
+          </div>
+          <div class="detail-row" *ngIf="selectedProduct.description">
+            <span class="detail-key">Description:</span>
+            <span class="detail-val">{{ selectedProduct.description }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeDetailsModal()">Close</button>
+        <button class="btn btn-primary" (click)="closeDetailsModal(); openEditModal(selectedProduct)">
+          Edit Product
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: DELETE CONFIRMATION -->
+  <div class="modal-backdrop" *ngIf="showDeleteModal && productToDelete" (click)="closeDeleteModal()">
+    <div class="modal-card delete-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title text-danger">Confirm Product Deletion</h2>
+        <button class="modal-close-btn" (click)="closeDeleteModal()">&times;</button>
+      </div>
+
+      <div class="modal-body delete-body">
+        <div class="delete-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="text-danger">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </div>
+        <p class="delete-prompt">
+          Are you sure you want to delete <strong>{{ productToDelete.name }}</strong> (SKU: {{ productToDelete.sku }})?
+        </p>
+        <p class="delete-subtext">
+          This product will be permanently removed from the retail catalog and will no longer be available for checkout.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDelete()">
+          Permanently Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
